@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mgrn-stack-chart.fullname" . }}-backend
+  labels:
+    {{- include "mgrn-stack-chart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mgrn-stack-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "mgrn-stack-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}-backend
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        # ports:
+        # - containerPort: {{ .Values.backend.port }}
+        livenessProbe:           # To check the health of the Pod
+          httpGet:
+            path: /health
+            port: {{ .Values.backend.port }}
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 5
+        readinessProbe:          # To check if the Pod is ready to serve traffic or not
+          httpGet:
+            path: /health
+            port: {{ .Values.backend.port }}
+            scheme: HTTP
+          initialDelaySeconds: 5
+          timeoutSeconds: 1    

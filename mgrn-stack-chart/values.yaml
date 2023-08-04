@@ -52,8 +52,20 @@ ingress:
   hosts:
     - host: chart-example.local
       paths:
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: backend
+              pod:
+                number: 8080
         - path: /
           pathType: ImplementationSpecific
+          backend:
+            service:
+              name: frontend
+              pod:
+                number: 80
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -84,6 +96,19 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+frontend:
+  enabled: false
+
+backend:
+  image:
+    repository: lemonday/k8s-todos-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8080
+  service:
+    type: LoadBalancer
+    port: 8080
 
 mongo:
   hostPath: /data/mongo

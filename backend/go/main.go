@@ -43,6 +43,10 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Hello world!"))
 	})
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.Mount("/todos", handler.TodosResource{}.Routes(service))
 
 	startServer(&http.Server{

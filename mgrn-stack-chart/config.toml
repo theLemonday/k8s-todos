@@ -1,5 +1,8 @@
-[databases]
+[backend]
+port = 8080
 
-[databases.mongo]
-enable = true
-expose_port = 27017
+[mongo]
+host = "cluster0.zragr78.mongodb.net"
+port = 27017
+database = "free-tier"
+collection = "todos"

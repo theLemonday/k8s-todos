@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-conf
+data:
+{{ .Files.Get "config/mongo.toml" | indent 2 }}

@@ -1,0 +1,4 @@
+host = "mongodb"
+port = 27017
+database = "cluster0.zragr78.mongodb.net"
+collection = "todos"

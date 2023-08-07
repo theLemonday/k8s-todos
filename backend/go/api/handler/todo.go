@@ -23,9 +23,12 @@ func (rs TodosResource) Routes(s todo.Service) chi.Router {
 
 	r.Post("/", rs.Create)
 	r.Get("/", rs.GetAllTodos)
-	r.Get("/{todoId}", rs.GetTodoById)
-	r.Post("/edit", rs.UpdateTodo)
-	r.Delete("/{todoId}", rs.DeleteTodo)
+
+	r.Route("/{todoId}", func(r chi.Router) {
+		r.Get("/", rs.GetTodoById)
+		r.Put("/", rs.UpdateTodo)
+		r.Delete("/", rs.DeleteTodo)
+	})
 
 	return r
 }

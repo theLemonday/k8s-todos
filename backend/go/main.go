@@ -35,23 +35,30 @@ func main() {
 	repo := todo.NewMongoDbRepository(todosColl)
 	service := todo.NewService(repo)
 
-	r := chi.NewRouter()
+	hub := newHub()
+	go hub.run()
 
-	r.Use(middleware.Logger)
+	router := chi.NewRouter()
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("Hello world!"))
-	})
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	router.Use(middleware.Logger)
+
+	// router.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Header().Set("Content-Type", "text/plain")
+	// 	w.Write([]byte("Hello world!"))
+	// })
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	r.Mount("/todos", handler.TodosResource{}.Routes(service))
+	router.Mount("/todos", handler.TodosResource{}.Routes(service))
+
+	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWs(hub, w, r)
+	})
 
 	startServer(&http.Server{
 		Addr:    fmt.Sprintf(":%d", config.BackendConfig.Port),
-		Handler: r,
+		Handler: router,
 	})
 }
 

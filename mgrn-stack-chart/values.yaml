@@ -103,7 +103,7 @@ frontend:
 backend:
   image:
     repository: lemonday/k8s-todos-backend
-    tag: latest
+    tag: "1.2.0"
     pullPolicy: IfNotPresent
   port: 8080
   service:

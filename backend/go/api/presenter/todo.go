@@ -9,23 +9,54 @@ import (
 )
 
 type Todo struct {
-	ID      primitive.ObjectID `json:"id" bson:"_id"`
+	ID      primitive.ObjectID `json:"id"`
 	Content string             `json:"content"`
 }
 
-func EntityToPresenter(todo *entities.Todo) *Todo {
+type TodoRequest struct {
+	Type MessageType `json:"type"`
+	Todo
+}
+
+type TodoReponse struct {
+	ErrorReponse `json:",omitempty"`
+	Data         interface{} `json:"data,omitempty"`
+}
+
+func Entity2Presenter(todo *entities.Todo) *Todo {
 	return &Todo{
 		ID:      todo.ID,
 		Content: todo.Content,
 	}
 }
 
-func SuccessTodoReponse(w http.ResponseWriter, resTodo *Todo) {
-	res, err := json.Marshal(map[string]interface{}{
-		"status": true,
-		"data":   resTodo,
-		// "error": "",
+func Presenter2Entity(todo *Todo) *entities.Todo {
+	return &entities.Todo{
+		ID:      todo.ID,
+		Content: todo.Content,
+	}
+}
+
+func (t TodoReponse) MarshalSuccessOne(todo *Todo) ([]byte, error) {
+	return json.Marshal(&TodoReponse{
+		Data: todo,
 	})
+}
+
+func (t TodoReponse) MarshalSuccessMany(todos *[]Todo) ([]byte, error) {
+	return json.Marshal(&TodoReponse{
+		Data: todos,
+	})
+}
+
+func (t TodoReponse) MarshalFailure(err *ErrorReponse) ([]byte, error) {
+	return json.Marshal(&TodoReponse{
+		ErrorReponse: *err,
+	})
+}
+
+func (t TodoReponse) WriteToHttpSuccessOneTodo(w http.ResponseWriter, todo *Todo) {
+	res, err := TodoReponse{}.MarshalSuccessOne(todo)
 	if err != nil {
 		http.Error(w, "Error marshaling response", http.StatusInternalServerError)
 	}
@@ -33,12 +64,17 @@ func SuccessTodoReponse(w http.ResponseWriter, resTodo *Todo) {
 	w.Write(res)
 }
 
-func TodosSuccessReponse(w http.ResponseWriter, resTodos *[]Todo) {
-	res, err := json.Marshal(map[string]interface{}{
-		"status": true,
-		"data":   resTodos,
-		// "error": "",
-	})
+func WriteReponseTodoToReponseWriter(w http.ResponseWriter, resTodo *Todo) {
+	res, err := TodoReponse{}.MarshalSuccessOne(resTodo)
+	if err != nil {
+		http.Error(w, "Error marshaling response", http.StatusInternalServerError)
+	}
+
+	w.Write(res)
+}
+
+func TodosSuccessReponse(w http.ResponseWriter, todos *[]Todo) {
+	res, err := TodoReponse{}.MarshalSuccessMany(todos)
 	if err != nil {
 		http.Error(w, "Error marshaling response", http.StatusInternalServerError)
 	}

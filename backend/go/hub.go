@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+type WebsocketHandler interface {
+	HandleMessage(msg []byte) []byte
+}
 
 type Hub struct {
 	clients map[*Client]bool
@@ -10,14 +12,17 @@ type Hub struct {
 	unregister chan *Client
 
 	broadcast chan []byte
+
+	handler WebsocketHandler
 }
 
-func newHub() *Hub {
+func newHub(handler WebsocketHandler) *Hub {
 	return &Hub{
 		clients:    make(map[*Client]bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		broadcast:  make(chan []byte),
+		handler:    handler,
 	}
 }
 
@@ -32,10 +37,10 @@ func (h *Hub) run() {
 				close(client.send)
 			}
 		case msg := <-h.broadcast:
-			fmt.Println(msg)
+			res := h.handler.HandleMessage(msg)
 			for client := range h.clients {
 				select {
-				case client.send <- msg:
+				case client.send <- res:
 				default:
 					close(client.send)
 					delete(h.clients, client)

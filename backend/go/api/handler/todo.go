@@ -51,7 +51,7 @@ func (rs TodosResource) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	presenter.SuccessTodoReponse(w, presenter.EntityToPresenter(resTodo))
+	presenter.WriteReponseTodoToReponseWriter(w, presenter.Entity2Presenter(resTodo))
 }
 
 func (rs TodosResource) GetAllTodos(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +82,7 @@ func (rs TodosResource) GetTodoById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	presenter.SuccessTodoReponse(w, resTodo)
+	presenter.WriteReponseTodoToReponseWriter(w, resTodo)
 }
 
 func (rs TodosResource) UpdateTodo(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +103,7 @@ func (rs TodosResource) UpdateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	presenter.SuccessTodoReponse(w, presenter.EntityToPresenter(resTodo))
+	presenter.WriteReponseTodoToReponseWriter(w, presenter.Entity2Presenter(resTodo))
 }
 
 func (rs TodosResource) DeleteTodo(w http.ResponseWriter, r *http.Request) {
@@ -116,5 +116,5 @@ func (rs TodosResource) DeleteTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	presenter.SuccessTodoReponse(w, nil)
+	presenter.WriteReponseTodoToReponseWriter(w, nil)
 }

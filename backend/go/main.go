@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -35,30 +37,57 @@ func main() {
 	repo := todo.NewMongoDbRepository(todosColl)
 	service := todo.NewService(repo)
 
-	hub := newHub()
+	hub := newHub(handler.NewTodoWebsocketHandler(service))
 	go hub.run()
 
-	router := chi.NewRouter()
+	r := chi.NewRouter()
 
-	router.Use(middleware.Logger)
+	r.Use(middleware.Logger)
 
-	// router.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Header().Set("Content-Type", "text/plain")
-	// 	w.Write([]byte("Hello world!"))
-	// })
-	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Hello world!"))
+	})
+
+	// Create a route along /files that will serve contents from
+	// the ./data/ folder.
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "static"))
+	FileServer(r, "/files", filesDir)
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Mount("/todos", handler.TodosResource{}.Routes(service))
+	r.Mount("/todos", handler.TodosResource{}.Routes(service))
 
-	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)
 	})
 
 	startServer(&http.Server{
 		Addr:    fmt.Sprintf(":%d", config.BackendConfig.Port),
-		Handler: router,
+		Handler: r,
+	})
+}
+
+// FileServer conveniently sets up a http.FileServer handler to serve
+// static files from a http.FileSystem.
+func FileServer(r chi.Router, path string, root http.FileSystem) {
+	if strings.ContainsAny(path, "{}*") {
+		panic("FileServer does not permit any URL parameters.")
+	}
+
+	if path != "/" && path[len(path)-1] != '/' {
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
+		path += "/"
+	}
+	path += "*"
+
+	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
+		rctx := chi.RouteContext(r.Context())
+		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
+		fs.ServeHTTP(w, r)
 	})
 }
 
